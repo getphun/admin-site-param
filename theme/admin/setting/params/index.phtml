@@ -1,0 +1,139 @@
+<?php $this->partial('shared/header'); ?>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="form-group">
+                <input type="Filter" id="params-filter" placeholder="Filter" autofocus class="form-control">
+            </div>
+            
+            <hr>
+            
+            <div class="list-group group-selector">
+                <a class="list-group-item active" href="#*" data-group="*">All</a>
+                <?php foreach($groups as $group): ?>
+                <a class="list-group-item" href="#<?= urlencode($group) ?>" data-group="<?= $group ?>"><?= $group ?></a>
+                <?php endforeach; ?>
+            </div>
+            
+            <hr>
+            
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <?php $len = number_format(count($params), 0, '.','.'); ?>
+                    Total result: <span id="params-total"><?= $len ?></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="page-header">
+                <?php if($this->can_i->create_setting): ?>
+                <button class="btn btn-primary pull-right" data-target="#create-new" data-toggle="modal">Create New</button>
+                <?php endif; ?>
+                <h3>Site Params</h3>
+            </div>
+                
+            <?php if($params): ?>
+            <table class="table table-hover">
+                <thead>
+                    <tr><th>Name</th><th>Group</th><th>Value</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <?php
+                        $can_edit   = $this->can_i->update_setting;
+                        $can_remove = $this->can_i->remove_setting;
+                        
+                        $last_group  = '';
+                        $last_active = true;
+                    ?>
+                    <?php foreach($params as $par): ?>
+                        <?php
+                            if($par->group != $last_group){
+                                $last_group = $par->group;
+                                $last_active = !$last_active;
+                            }
+                        ?>
+                    <tr class="param-item<?= ($last_active?' active':'') ?>" data-text="<?= $par->name ?>" data-group="<?= $par->group ?>">
+                        <td><?= $par->name ?></td>
+                        <td><?= $par->group ?></td>
+                        <td>
+                            
+                            <?php if(in_array($par->type, [1,2,5,7])): ?>
+                                <?= nl2br($par->value); ?>
+                            
+                            <?php elseif($par->type == 3): ?>
+                                <?= number_format($par->value,0,'.','.') ?>
+                            
+                            <?php elseif($par->type == 4): ?>
+                                <code><?= ($par->value ? 'true' : 'false') ?></code>
+                            
+                            <?php elseif($par->type == 6): ?>
+                                <?php if($par->value): ?>
+                                <a href="<?= $par->value ?>" target="_blank"><?= $par->value ?></a>
+                                <?php endif; ?>
+                            
+                            <?php elseif($par->type == 8): ?>
+                                <?php if($par->value): ?>
+                                <span style="background-color: <?= $par->value ?>">&#160;&#160;&#160;&#160;</span>
+                                <?php endif; ?>
+                                <?= $par->value ?>
+                            
+                            <?php endif; ?>
+                            
+                        </td>
+                        <td>
+                            <?php if($can_edit || $can_remove): ?>
+                            <div class="btn-group btn-group-xs pull-right">
+                                <?php if($can_edit): ?>
+                                <a href="<?= $this->router->to('adminSettingParamsEdit', ['id'=>$par->id]) ?>" class="btn btn-default" title="Edit">
+                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                                </a>
+                                <?php endif; ?>
+                                <?php if($can_remove): ?>
+                                <button id="param-<?= $par->id ?>" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="btn btn-default btn-xs">
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="param-<?= $par->id ?>">
+                                    <li>
+                                        <a href="<?= $this->router->to('adminSettingParamsRemove', ['id'=>$par->id]) ?>" data-confirm="Delete Confirmation" data-confirm-message="Are you sure want to delete this param? This action can't be undone." title="Delete" aria-label="Delete">
+                                            <i class="fa fa-trash" aria-hidden="true"></i> Delete
+                                        </a>
+                                    </li>
+                                </ul>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                            
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<?php if($this->can_i->create_setting): ?>
+<div class="modal fade" tabindex="-1" role="dialog" id="create-new">
+    <form class="modal-dialog" action="<?= $this->router->to('adminSettingParamsEdit', ['id'=>0]) ?>" role="document" method="get">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">New Site Params</h4>
+            </div>
+            <div class="modal-body">
+                <?= $this->form->field('name') ?>
+                <?= $this->form->field('club', $groups) ?>
+                <?= $this->form->field('type') ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary">Create</button>
+            </div>
+        </div>
+    </form>
+</div>
+<?php endif; ?>
+
+<?php $this->partial('shared/footer'); ?>
